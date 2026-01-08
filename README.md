@@ -70,7 +70,7 @@ python app.py
 Open Chrome, Edge, or Firefox and go to: http://127.0.0.1:5000
 
 📖 How to Use
-Phase 1: Pre-Season Setup
+### **Phase 1: Pre-Season Setup**
 Click the "Setup" button in the top navigation.
 
 Select League: Choose a league (e.g., Premier League) to set the background theme and team list.
@@ -88,15 +88,15 @@ These games move to the "Live Broadcast" section.
 
 Click "Play", enter the score (e.g., 3 - 2), add highlights notes (e.g., "90th min winner"), and confirm.
 
-Phase 3: Mid-Season Transfers
+### **Phase 3: Mid-Season Transfers**
 Adding a Player: Go to Setup > Mid-Season Manager. Enter their name, pick a team, and click "Add". They will be scheduled to play everyone else.
 
 Removing a Player: Go to Setup > Mid-Season Manager. Click the red REMOVE button next to a player. They will be deleted, and their unplayed matches will be cancelled (played matches remain in history).
 
-Phase 4: The Finale
+### **Phase 4: The Finale**
 Once every match is marked as completed, a Champion Screen will automatically trigger with the winner's stats and a trophy celebration.
 
-🔧 Troubleshooting
+### **🔧 Troubleshooting**
 🛑 "Internal Server Error" / Database Bugs
 If you updated the code and the site crashes, your database is likely outdated.
 
@@ -104,20 +104,21 @@ Go to this URL in your browser: http://127.0.0.1:5000/hard_reset
 
 This forces a factory reset of the system.
 
-🖼️ "Images Not Loading"
+### **🖼️ "Images Not Loading"**
 The app uses online URLs for logos.
 
 If you are offline or the link is blocked, the system automatically replaces the broken logo with a generic Shield Icon so the layout stays perfect.
 
-🔊 "No Sound?"
+### **🔊 "No Sound?"**
 Modern browsers block auto-playing audio. Click anywhere on the page once to "wake up" the audio engine.
 
-💻 Tech Stack
+### **💻 Tech Stack**
 Backend: Python (Flask)
 
 Database: SQLite (via SQLAlchemy)
 
 Frontend: HTML5, TailwindCSS (CDN)
+---------------------------------------------------------------------------------------------------------------------------------------------------------
 
 Interactivity: Alpine.js (Lightweight JavaScript)
 
