@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Pitchside Pro</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    
+    <style>
+        body { 
+            background-color: #050505; color: #fff; font-family: -apple-system, system-ui, sans-serif; 
+            background-image: url('https://images.unsplash.com/photo-1522778119026-d647f0565c6a?q=80&w=2940&auto=format&fit=crop');
+            background-size: cover; background-position: center; background-attachment: fixed;
+        }
+        .bg-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: -1; }
+        
+        /* Clean Glass Effect (No Neon) */
+        .glass { 
+            background: rgba(255, 255, 255, 0.08); 
+            backdrop-filter: blur(20px); 
+            border: 1px solid rgba(255,255,255,0.1); 
+        }
+        
+        /* Table Logic */
+        .rank-1 { border-left: 4px solid #FFD700; background: linear-gradient(90deg, rgba(255, 215, 0, 0.1), transparent); }
+        .rank-2 { border-left: 4px solid #C0C0C0; }
+        .rank-3 { border-left: 4px solid #CD7F32; }
+        .rank-trash { opacity: 0.5; filter: grayscale(100%); transition: 0.3s; }
+        .rank-trash:hover { opacity: 1; filter: grayscale(0%); }
+
+        /* Form Dots */
+        .dot-W { height: 8px; width: 8px; background-color: #22c55e; border-radius: 50%; display: inline-block; }
+        .dot-D { height: 8px; width: 8px; background-color: #9ca3af; border-radius: 50%; display: inline-block; }
+        .dot-L { height: 8px; width: 8px; background-color: #ef4444; border-radius: 50%; display: inline-block; }
+
+        /* Inputs */
+        .input-box { background: rgba(0,0,0,0.3); border: 1px solid #444; color: white; padding: 10px; rounded-lg; width: 100%; outline: none; }
+        .input-box:focus { border-color: #3b82f6; background: rgba(0,0,0,0.5); }
+        
+        /* Team Selector */
+        .team-select-card { cursor: pointer; border: 2px solid transparent; opacity: 0.6; transition: 0.2s; }
+        .team-select-card:hover { opacity: 1; transform: scale(1.05); }
+        .team-select-card.selected { border-color: #3b82f6; opacity: 1; background: rgba(255,255,255,0.1); }
+    </style>
+    <script>
+        function imgError(image) { image.onerror = ""; image.src = "https://cdn-icons-png.flaticon.com/512/1828/1828884.png"; return true; }
+        const clickSound = new Audio('https://assets.mixkit.co/active_storage/sfx/2568/2568-preview.mp3');
+        function playClick() { try { clickSound.currentTime = 0; clickSound.play(); } catch(e){} }
+    </script>
+</head>
+
+<body class="min-h-screen flex flex-col items-center" x-data="tournamentApp()" x-init="initApp()">
+
+    <div class="bg-overlay"></div>
+
+    <nav class="w-full max-w-6xl flex justify-between items-center py-8 px-4 z-50">
+        <div class="text-2xl font-bold tracking-tighter">Pitchside<span class="text-blue-500">.</span></div>
+        <div class="flex space-x-1 bg-white/10 p-1 rounded-full backdrop-blur-md">
+            <button @click="tab='fixtures'; playClick()" :class="tab==='fixtures'?'bg-white text-black shadow-lg':'text-gray-400 hover:text-white'" class="px-6 py-2 rounded-full text-sm font-bold transition-all">Matches</button>
+            <button @click="tab='standings'; playClick()" :class="tab==='standings'?'bg-white text-black shadow-lg':'text-gray-400 hover:text-white'" class="px-6 py-2 rounded-full text-sm font-bold transition-all">Table</button>
+            <button @click="tab='teams'; playClick()" :class="tab==='teams'?'bg-white text-black shadow-lg':'text-gray-400 hover:text-white'" class="px-6 py-2 rounded-full text-sm font-bold transition-all">Clubs</button>
+            <button @click="tab='results'; playClick()" :class="tab==='results'?'bg-white text-black shadow-lg':'text-gray-400 hover:text-white'" class="px-6 py-2 rounded-full text-sm font-bold transition-all">History</button>
+        </div>
+        <button @click="showSetup=true; playClick()" class="text-sm text-gray-300 hover:text-white border border-white/20 px-4 py-2 rounded-lg">Manage</button>
+    </nav>
+
+    <main class="w-full max-w-6xl px-4 pb-20 z-10 mt-4">
+        
+        <div x-show="tab === 'fixtures'" class="space-y-8 animate-fade-in">
+            <div class="flex justify-between items-center">
+                {% if top_scorer %}
+                <div class="glass flex items-center gap-4 px-6 py-3 rounded-xl border-l-4 border-blue-500">
+                    <div class="text-2xl">👟</div>
+                    <div><div class="text-blue-400 text-xs font-bold uppercase">Golden Boot</div><div class="font-bold">{{ top_scorer.name }} ({{ top_scorer.gf }})</div></div>
+                </div>
+                {% else %}<div></div>{% endif %}
+                <button @click="showQuickMatch=true; playClick()" class="bg-blue-600 hover:bg-blue-500 text-white px-6 py-2 rounded-lg font-bold text-sm shadow-lg">+ Quick Match</button>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {% for m in scheduled %}
+                <div class="glass p-6 rounded-2xl border-l-4 border-blue-500 relative group">
+                     <div class="text-center mb-4"><span class="text-blue-400 text-xs font-bold uppercase tracking-widest">Match Ready</span></div>
+                     <div class="flex justify-between items-center">
+                        <div class="text-center w-1/3"><img src="{{ m.home_logo }}" onerror="imgError(this)" class="w-16 h-16 mx-auto object-contain mb-2"><div class="font-bold">{{ m.home_team }}</div><div class="text-xs text-gray-500 uppercase">{{ m.home_player }}</div></div>
+                        <div class="text-2xl font-bold text-gray-600">VS</div>
+                        <div class="text-center w-1/3"><img src="{{ m.away_logo }}" onerror="imgError(this)" class="w-16 h-16 mx-auto object-contain mb-2"><div class="font-bold">{{ m.away_team }}</div><div class="text-xs text-gray-500 uppercase">{{ m.away_player }}</div></div>
+                    </div>
+                    <button @click="activeMatch={{m.id}}; showScore=true; playClick()" class="mt-6 w-full py-3 bg-white text-black font-bold rounded-lg hover:bg-gray-200 transition">Play Match</button>
+                    <form action="/delete_match/{{ m.id }}" method="POST" class="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition"><button class="text-gray-500 hover:text-red-500 font-bold">✕</button></form>
+                </div>
+                {% else %}
+                <div class="col-span-2 text-center text-gray-500 py-12 glass rounded-2xl border border-dashed border-gray-700">No scheduled matches.</div>
+                {% endfor %}
+            </div>
+
+            {% if pending %}
+            <div class="pt-8"><h2 class="text-lg font-bold mb-4 text-gray-300">Pending Matches</h2>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                {% for m in pending %}
+                <div class="glass p-4 rounded-xl flex justify-between items-center hover:bg-white/5 transition">
+                    <div class="flex items-center gap-3"><img src="{{ m.home_logo }}" class="w-6 h-6 object-contain"><span class="text-xs text-gray-500">vs</span><img src="{{ m.away_logo }}" class="w-6 h-6 object-contain"></div>
+                    <form action="/schedule/{{ m.id }}" method="POST"><button class="text-xs bg-white text-black px-3 py-1 rounded font-bold hover:bg-gray-200">Add</button></form>
+                </div>
+                {% endfor %}
+            </div></div>
+            {% endif %}
+        </div>
+
+        <div x-show="tab === 'standings'" style="display: none;">
+            <div class="glass rounded-2xl overflow-hidden">
+                <table class="w-full text-left text-sm">
+                    <thead class="bg-white/5 text-gray-400">
+                        <tr><th class="p-4 text-center">Pos</th><th class="p-4">Club</th><th class="p-4 hidden md:table-cell">Form</th><th class="p-4 text-center">P</th><th class="p-4 text-center">W</th><th class="p-4 text-center">D</th><th class="p-4 text-center">L</th><th class="p-4 text-center">GD</th><th class="p-4 text-right pr-6">Pts</th></tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-800">
+                        {% for p in players %}
+                        <tr class="{% if loop.index == 1 %} rank-1 {% elif loop.index > 3 %} rank-trash {% endif %} hover:bg-white/5 transition h-16 cursor-pointer" @click="showPlayer=true; fetch('/player_details/{{p.id}}').then(res=>res.json()).then(data=>playerData=data)">
+                            <td class="p-4 text-center font-bold text-lg">{% if loop.index == 1 %}👑{% else %}{{ loop.index }}{% endif %}</td>
+                            <td class="p-4"><div class="flex items-center gap-4"><img src="{{ p.logo }}" onerror="imgError(this)" class="w-8 h-8 object-contain"><div><div class="font-bold text-white">{{ p.team }}</div><div class="text-xs text-gray-500 uppercase">{{ p.name }}</div></div></div></td>
+                            <td class="p-4 hidden md:flex items-center gap-1 h-16">{% for result in p.form %}<span class="dot-{{result}}"></span>{% endfor %}</td>
+                            <td class="p-4 text-center text-gray-400">{{ p.played }}</td>
+                            <td class="p-4 text-center text-gray-400">{{ p.wins }}</td>
+                            <td class="p-4 text-center text-gray-400">{{ p.draws }}</td>
+                            <td class="p-4 text-center text-gray-400">{{ p.losses }}</td>
+                            <td class="p-4 text-center font-mono {{ 'text-green-500' if p.gd > 0 else 'text-red-500' }}">{{ p.gd }}</td>
+                            <td class="p-4 text-right font-bold text-lg text-blue-400 pr-6">{{ p.points }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div x-show="tab === 'teams'" style="display: none;">
+            <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
+                {% for p in players %}
+                <div @click="showPlayer=true; fetch('/player_details/{{p.id}}').then(res=>res.json()).then(data=>playerData=data); playClick()" class="glass p-6 rounded-xl flex flex-col items-center justify-center cursor-pointer hover:bg-white/5 transition">
+                    <img src="{{ p.logo }}" onerror="imgError(this)" class="w-16 h-16 object-contain mb-3 filter drop-shadow-lg">
+                    <div class="text-lg font-bold text-center">{{ p.team }}</div>
+                    <div class="text-xs text-gray-500 uppercase font-bold">{{ p.name }}</div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <div x-show="tab === 'results'" style="display: none;">
+            <div class="grid grid-cols-1 gap-3 max-w-3xl mx-auto">
+                {% for c in completed %}
+                <div class="glass p-4 rounded-xl flex items-center justify-between relative group">
+                    <div class="flex items-center gap-4 w-1/3 justify-end"><span class="font-bold {{ 'text-gray-500' if c.home_score < c.away_score else 'text-white' }}">{{ c.home_team }}</span><img src="{{ c.home_logo }}" onerror="imgError(this)" class="w-8 h-8 object-contain"></div>
+                    <div class="bg-black/50 px-4 py-1 rounded text-xl font-black text-white tracking-widest">{{ c.home_score }} - {{ c.away_score }}</div>
+                    <div class="flex items-center gap-4 w-1/3 justify-start"><img src="{{ c.away_logo }}" onerror="imgError(this)" class="w-8 h-8 object-contain"><span class="font-bold {{ 'text-gray-500' if c.away_score < c.home_score else 'text-white' }}">{{ c.away_team }}</span></div>
+                    <form action="/delete_match/{{ c.id }}" method="POST" class="absolute right-4 opacity-0 group-hover:opacity-100 transition"><button class="text-red-500 text-xs font-bold">DEL</button></form>
+                </div>
+                {% else %}<div class="text-center text-gray-500 italic py-10">No matches played yet.</div>{% endfor %}
+            </div>
+        </div>
+    </main>
+
+    <div x-show="showSetup" class="fixed inset-0 z-50 flex items-center justify-center bg-black/95 backdrop-blur-xl" style="display: none;">
+        <div class="w-full max-w-5xl h-[90vh] glass rounded-3xl relative flex flex-col p-10 overflow-hidden">
+            <button @click="showSetup=false" class="absolute top-6 right-6 text-gray-500 hover:text-white transition">✕ CLOSE</button>
+            <div class="flex gap-8 mb-8 border-b border-gray-700 pb-4">
+                <button @click="manageTab='league'" :class="manageTab==='league' ? 'text-blue-400 border-b-2 border-blue-400' : 'text-gray-500'" class="text-xl font-bold uppercase pb-2">New Season</button>
+                <button @click="manageTab='squads'" :class="manageTab==='squads' ? 'text-blue-400 border-b-2 border-blue-400' : 'text-gray-500'" class="text-xl font-bold uppercase pb-2">Mid-Season Manager</button>
+            </div>
+
+            <div x-show="manageTab==='league'" class="flex-1 flex flex-col h-full overflow-hidden">
+                <form action="/setup" method="POST" class="flex flex-col h-full">
+                    <div class="mb-6"><div class="flex gap-4 overflow-x-auto pb-4">{% for key, data in leagues.items() %}<label class="cursor-pointer min-w-[120px]"><input type="radio" name="league_select" value="{{ key }}" class="hidden" @change="changeLeague('{{ key }}')"><div class="px-4 py-2 rounded-lg border border-gray-700 hover:bg-gray-800 transition text-center text-sm font-bold uppercase" :class="selectedLeague==='{{ key }}'?'bg-white text-black':'text-gray-400'">{{ data.name }}</div></label>{% endfor %}</div></div>
+                    <div class="flex-1 overflow-y-auto pr-2 grid grid-cols-1 md:grid-cols-2 gap-4"><template x-for="(player, index) in players" :key="index"><div class="bg-black/30 p-4 rounded-xl border border-gray-700"><div class="flex justify-between mb-2"><span class="text-blue-400 font-bold text-xs">PLAYER <span x-text="index+1"></span></span><button type="button" @click="removePlayer(index)" class="text-red-500 text-xs">✕</button></div><input type="text" name="player_name[]" x-model="player.name" class="input-box mb-3" placeholder="Name"><input type="hidden" name="player_team_name[]" :value="player.teamName"><input type="hidden" name="player_team_logo[]" :value="player.teamLogo"><div class="grid grid-cols-5 gap-2"><template x-for="team in availableTeams"><div @click="selectTeam(index, team)" class="team-select-card p-1 rounded flex flex-col items-center justify-center bg-white/5" :class="player.teamName===team.name?'selected':''"><img :src="team.logo" class="w-6 h-6 object-contain"></div></template></div></div></template></div>
+                    <div class="pt-6 border-t border-gray-700 flex justify-between items-center"><button type="button" @click="addPlayer()" class="text-gray-400 hover:text-white font-bold text-sm">+ Add Slot</button><button type="submit" class="bg-blue-600 text-white px-8 py-3 rounded-lg font-bold uppercase hover:bg-blue-500">Create Season</button></div>
+                </form>
+            </div>
+
+            <div x-show="manageTab==='squads'" class="flex-1 flex flex-col overflow-hidden">
+                <div class="flex-1 overflow-y-auto pr-4 mb-6">
+                    <h3 class="text-gray-400 text-xs font-bold uppercase mb-4">Active Squads</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {% for p in players %}
+                        <div class="bg-white/5 p-3 rounded-lg flex items-center justify-between border border-gray-700">
+                            <div class="flex items-center gap-3"><img src="{{ p.logo }}" class="w-8 h-8 object-contain"><div><div class="font-bold text-sm">{{ p.name }}</div><div class="text-[10px] text-gray-500">{{ p.team }}</div></div></div>
+                            <form action="/remove_player_midseason/{{ p.id }}" method="POST" onsubmit="return confirm('Remove player?');"><button class="text-red-500 text-xs border border-red-500/30 px-3 py-1 rounded hover:bg-red-500 hover:text-white">REMOVE</button></form>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                <div class="bg-black/30 p-6 rounded-xl border border-gray-700">
+                    <h3 class="text-blue-400 text-xs font-bold uppercase mb-4">Add New Player</h3>
+                    <form action="/add_player_midseason" method="POST" class="space-y-4">
+                        <input type="text" name="name" class="input-box" placeholder="Player Name" required>
+                        <div class="grid grid-cols-6 gap-2 max-h-32 overflow-y-auto p-2 bg-black/20 rounded-lg">
+                            <template x-for="team in availableTeams">
+                                <label class="cursor-pointer team-select-card p-2 rounded flex flex-col items-center bg-white/5">
+                                    <input type="radio" name="team_val" class="hidden" @change="midSeasonTeamName=team.name; midSeasonTeamLogo=team.logo">
+                                    <img :src="team.logo" class="w-6 h-6 object-contain">
+                                    <span class="text-[7px] mt-1 text-gray-400" x-text="team.name"></span>
+                                </label>
+                            </template>
+                        </div>
+                        <input type="hidden" name="team_name" :value="midSeasonTeamName"><input type="hidden" name="team_logo" :value="midSeasonTeamLogo">
+                        <button type="submit" class="w-full bg-white text-black py-3 rounded-lg font-bold uppercase hover:bg-gray-200">Add Player</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div x-show="showPlayer" class="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-sm" style="display: none;">
+        <div class="glass w-full max-w-lg p-8 rounded-3xl relative" @click.away="showPlayer=false">
+            <button @click="showPlayer=false" class="absolute top-4 right-4 text-gray-500 hover:text-white">✕</button>
+            <div x-show="!isEditingProfile">
+                <div class="text-center mb-8"><img :src="playerData.logo" onerror="imgError(this)" class="w-24 h-24 mx-auto object-contain mb-4"><h3 class="text-3xl font-bold text-white" x-text="playerData.team"></h3><p class="text-blue-400 text-sm font-bold uppercase mt-1" x-text="playerData.name"></p><button @click="isEditingProfile=true" class="mt-4 text-[10px] text-gray-500 hover:text-white underline uppercase">Edit</button></div>
+                <div class="grid grid-cols-3 gap-2 mb-8 text-center"><div class="bg-black/40 p-3 rounded"><div class="text-2xl font-black" x-text="playerData.stats.played"></div><div class="text-[9px] uppercase text-gray-500">Games</div></div><div class="bg-black/40 p-3 rounded"><div class="text-2xl font-black text-green-400" x-text="playerData.stats.wins"></div><div class="text-[9px] uppercase text-gray-500">Wins</div></div><div class="bg-black/40 p-3 rounded"><div class="text-2xl font-black" x-text="playerData.stats.goals"></div><div class="text-[9px] uppercase text-gray-500">Goals</div></div></div>
+                <div class="max-h-40 overflow-y-auto space-y-1"><template x-for="m in playerData.matches"><div class="flex justify-between bg-white/5 p-2 rounded text-xs"><span x-text="m.opponent_team"></span><span :class="m.color" class="font-bold" x-text="m.score"></span></div></template></div>
+            </div>
+            <div x-show="isEditingProfile">
+                <h3 class="text-xl font-bold text-center mb-6">EDIT</h3>
+                <form :action="'/update_player/'+playerData.id" method="POST"><div class="space-y-4"><input type="text" name="name" x-model="playerData.name" class="input-box"><input type="text" name="team" x-model="playerData.team" class="input-box"><input type="text" name="logo" x-model="playerData.logo" class="input-box"></div><div class="flex gap-4 mt-6"><button type="button" @click="isEditingProfile=false" class="w-1/2 py-3 bg-gray-800 rounded-lg">Cancel</button><button type="submit" class="w-1/2 py-3 bg-blue-600 text-white font-bold rounded-lg">Save</button></div></form>
+            </div>
+        </div>
+    </div>
+
+    <div x-show="showScore" class="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-sm" style="display: none;"><div class="glass w-full max-w-md p-8 rounded-3xl relative" @click.away="showScore=false"><h3 class="text-2xl font-bold mb-8 text-center">FULL TIME</h3><form :action="'/record/'+activeMatch" method="POST"><div class="flex justify-between items-center mb-8"><input type="number" name="h_score" class="w-24 h-24 text-center text-5xl font-black bg-black/50 rounded-2xl border border-gray-700 text-white outline-none"><div class="text-2xl font-thin text-gray-600">-</div><input type="number" name="a_score" class="w-24 h-24 text-center text-5xl font-black bg-black/50 rounded-2xl border border-gray-700 text-white outline-none"></div><button type="submit" class="w-full py-4 bg-white text-black font-black uppercase rounded-lg hover:bg-gray-200 transition">Confirm</button></form></div></div>
+    <div x-show="showQuickMatch" class="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-sm" style="display: none;"><div class="glass w-full max-w-md p-8 rounded-3xl relative" @click.away="showQuickMatch=false"><h3 class="text-2xl font-bold mb-6 text-center text-white">QUICK MATCH</h3><form action="/create_match" method="POST"><div class="space-y-4 mb-6"><div><label class="text-[10px] uppercase text-gray-500 font-bold mb-1 block">Home Team</label><select name="home_name" class="input-box">{% for p in players %}<option value="{{ p.name }}" class="text-black">{{ p.team }} ({{ p.name }})</option>{% endfor %}</select></div><div class="text-center text-blue-500 text-xs font-bold uppercase tracking-widest">VS</div><div><label class="text-[10px] uppercase text-gray-500 font-bold mb-1 block">Away Team</label><select name="away_name" class="input-box">{% for p in players %}<option value="{{ p.name }}" class="text-black">{{ p.team }} ({{ p.name }})</option>{% endfor %}</select></div></div><button type="submit" class="w-full py-4 bg-blue-600 text-white font-bold uppercase rounded-lg hover:bg-blue-500 transition">Start Match</button></form></div></div>
+
+    <script>
+        const leagueData = {{ leagues | tojson }};
+        function tournamentApp() {
+            return {
+                tab: 'fixtures', showSetup: false, showScore: false, showQuickMatch: false, showPlayer: false, manageTab: 'league',
+                activeMatch: null, playerData: {id: null, name: '', team: '', logo: '', matches: [], stats: {}}, isEditingProfile: false,
+                selectedLeague: 'premier_league', availableTeams: [], midSeasonTeamName: '', midSeasonTeamLogo: '',
+                players: [{name: '', teamName: '', teamLogo: ''}, {name: '', teamName: '', teamLogo: ''}],
+                
+                initApp() { 
+                    this.availableTeams = leagueData[this.selectedLeague] ? leagueData[this.selectedLeague].teams : [];
+                    if(this.availableTeams.length > 0) { this.selectTeam(0, this.availableTeams[0]); this.selectTeam(1, this.availableTeams[1]); }
+                },
+                changeLeague(key) { this.selectedLeague = key; this.availableTeams = leagueData[key].teams; this.players.forEach((p, i) => { if(this.availableTeams[i]) this.selectTeam(i, this.availableTeams[i]); }); },
+                addPlayer() { this.players.push({name: '', teamName: '', teamLogo: ''}); let next = (this.players.length - 1) % this.availableTeams.length; this.selectTeam(this.players.length - 1, this.availableTeams[next]); },
+                removePlayer(i) { this.players = this.players.filter((_, idx) => idx !== i); },
+                selectTeam(i, team) { this.players[i].teamName = team.name; this.players[i].teamLogo = team.logo; }
+            }
+        }
+    </script>
+</body>
+</html>
