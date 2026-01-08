@@ -54,16 +54,18 @@ Make sure you have Python installed. If not, download it from python.org.
 
 2. Install Requirements
 Open your terminal (Command Prompt or PowerShell) in this folder and run:
-
+```text
 Bash
 
 pip install flask flask-sqlalchemy
+```
 3. Launch the Hub
 Run the application with this command:
-
+```text
 Bash
 
 python app.py
+```
 4. Open in Browser
 Open Chrome, Edge, or Firefox and go to: http://127.0.0.1:5000
 
@@ -77,7 +79,7 @@ Add Managers: Enter player names (e.g., "Kenny") and click a Team Logo from the 
 
 Click "Start Season". The system will generate the entire fixture list automatically.
 
-Phase 2: Matchday
+### **Phase 2: Matchday**
 Go to the "Matches" tab.
 
 Look at the "Pending List" and click "Add" on the games you want to play now.
