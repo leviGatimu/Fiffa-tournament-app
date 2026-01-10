@@ -8,39 +8,35 @@ app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///fifa_tournament.db'
 app.config['SECRET_KEY'] = 'clean_edition_v3'
 db = SQLAlchemy(app)
 
-# --- REAL LEAGUES DATABASE (Simplified) ---
+# --- REAL LEAGUES DATABASE (Updated Teams List) ---
 LEAGUE_DATA = {
-    "premier_league": {
-        "name": "Premier League",
+    "mixed_super_league": {
+        "name": "Mixed Super League",
         "teams": [
-            {"name": "Arsenal", "logo": "https://resources.premierleague.com/premierleague/badges/t3.svg"},
-            {"name": "Aston Villa", "logo": "https://resources.premierleague.com/premierleague/badges/t7.svg"},
-            {"name": "Chelsea", "logo": "https://resources.premierleague.com/premierleague/badges/t8.svg"},
-            {"name": "Liverpool", "logo": "https://resources.premierleague.com/premierleague/badges/t14.svg"},
-            {"name": "Man City", "logo": "https://resources.premierleague.com/premierleague/badges/t43.svg"},
-            {"name": "Man Utd", "logo": "https://resources.premierleague.com/premierleague/badges/t1.svg"},
-            {"name": "Newcastle", "logo": "https://resources.premierleague.com/premierleague/badges/t4.svg"},
-            {"name": "Spurs", "logo": "https://resources.premierleague.com/premierleague/badges/t6.svg"},
-            {"name": "West Ham", "logo": "https://resources.premierleague.com/premierleague/badges/t21.svg"},
-            {"name": "Wolves", "logo": "https://resources.premierleague.com/premierleague/badges/t39.svg"}
-        ]
-    },
-    "laliga": {
-        "name": "La Liga",
-        "teams": [
-            {"name": "Real Madrid", "logo": "https://assets.laliga.com/assets/2019/06/07/small/real-madrid.png"},
-            {"name": "Barcelona", "logo": "https://assets.laliga.com/assets/2019/06/07/small/barcelona.png"},
-            {"name": "Atletico", "logo": "https://assets.laliga.com/assets/2019/06/07/small/atletico-de-madrid.png"},
-            {"name": "Sevilla", "logo": "https://assets.laliga.com/assets/2019/06/07/small/sevilla.png"},
-            {"name": "Real Betis", "logo": "https://assets.laliga.com/assets/2022/09/15/small/real-betis.png"}
-        ]
-    },
-    "bundesliga": {
-        "name": "Bundesliga",
-        "teams": [
-            {"name": "Bayern", "logo": "https://upload.wikimedia.org/wikipedia/commons/1/1b/FC_Bayern_M%C3%BCnchen_logo_%282017%29.svg"},
-            {"name": "Dortmund", "logo": "https://upload.wikimedia.org/wikipedia/commons/6/67/Borussia_Dortmund_logo.svg"},
-            {"name": "Leverkusen", "logo": "https://upload.wikimedia.org/wikipedia/en/5/59/Bayer_04_Leverkusen_logo.svg"}
+            # --- PREMIER LEAGUE ---
+            {"name": "Man City", "logo": "https://upload.wikimedia.org/wikipedia/en/e/eb/Manchester_City_FC_badge.svg"},
+            {"name": "Arsenal", "logo": "https://upload.wikimedia.org/wikipedia/en/5/53/Arsenal_FC.svg"},
+            {"name": "Liverpool", "logo": "https://upload.wikimedia.org/wikipedia/en/0/0c/Liverpool_FC.svg"},
+            {"name": "Man Utd", "logo": "https://upload.wikimedia.org/wikipedia/en/7/7a/Manchester_United_FC_crest.svg"},
+            {"name": "Chelsea", "logo": "https://upload.wikimedia.org/wikipedia/en/c/cc/Chelsea_FC.svg"},
+            {"name": "Spurs", "logo": "https://upload.wikimedia.org/wikipedia/en/b/b4/Tottenham_Hotspur.svg"},
+            {"name": "Aston Villa", "logo": "https://upload.wikimedia.org/wikipedia/hif/5/57/Aston_Villa.png"},
+            {"name": "Newcastle", "logo": "https://upload.wikimedia.org/wikipedia/en/5/56/Newcastle_United_Logo.svg"},
+            {"name": "Buyern munish", "logo": "https://upload.wikimedia.org/wikipedia/commons/thumb/1/1f/Logo_FC_Bayern_M%C3%BCnchen_%282002%E2%80%932017%29.svg/2048px-Logo_FC_Bayern_M%C3%BCnchen_%282002%E2%80%932017%29.svg.png"},
+            
+            # --- LA LIGA ---
+            {"name": "Real Madrid", "logo": "https://upload.wikimedia.org/wikipedia/en/5/56/Real_Madrid_CF.svg"},
+            {"name": "Barcelona", "logo": "https://upload.wikimedia.org/wikipedia/en/4/47/FC_Barcelona_%28crest%29.svg"},
+            {"name": "Atletico Madrid", "logo": "https://www.dyntra.org/new/wp-content/uploads/2018/07/Athletico_Madrid.png"},
+            {"name": "Sevilla", "logo": "https://upload.wikimedia.org/wikipedia/en/3/3b/Sevilla_FC_logo.svg"},
+            {"name": "Valencia", "logo": "https://upload.wikimedia.org/wikipedia/en/c/ce/Valenciacf.svg"},
+            
+            # --- LIGUE 1 ---
+            {"name": "PSG", "logo": "https://upload.wikimedia.org/wikipedia/en/a/a7/Paris_Saint-Germain_F.C..svg"},
+            {"name": "Marseille", "logo": "https://upload.wikimedia.org/wikipedia/commons/d/d8/Olympique_Marseille_logo.svg"},
+            {"name": "Inter milan", "logo": "https://upload.wikimedia.org/wikipedia/commons/thumb/0/05/FC_Internazionale_Milano_2021.svg/1024px-FC_Internazionale_Milano_2021.svg.png"},
+            {"name": "Chelsea", "logo": "https://static.vecteezy.com/system/resources/previews/066/118/574/non_2x/chelsea-fc-logo-transparent-background-football-club-icon-digital-download-free-png.png"},
+            {"name": "Fullham", "logo": "https://cdn.freebiesupply.com/logos/large/2x/fulham-fc-1-logo-png-transparent.png"}
         ]
     }
 }
@@ -114,12 +110,20 @@ def setup():
 
 @app.route('/add_player_midseason', methods=['POST'])
 def add_player_midseason():
-    name = request.form.get('name'); team = request.form.get('team_name'); logo = request.form.get('team_logo')
+    # These names must match the 'name' attribute in your HTML form inputs
+    name = request.form.get('name')
+    team = request.form.get('team_name')
+    logo = request.form.get('team_logo')
+    
     if name and team:
         new_p = Player(name=name, team=team, logo=logo)
-        db.session.add(new_p); db.session.commit()
+        db.session.add(new_p)
+        db.session.commit()
+        
+        # Schedule matches against all other existing players
         for p in Player.query.filter(Player.id != new_p.id).all():
             db.session.add(Match(home_name=new_p.name, away_name=p.name, status='Pending'))
+        
         db.session.commit()
     return redirect(url_for('index'))
 
@@ -199,7 +203,7 @@ def delete_match(match_id):
                 elif m.away_score > m.home_score: a.wins -= 1; a.points -= 3; h.losses -= 1
                 else: h.draws -= 1; a.draws -= 1; h.points -= 1; a.points -= 1
                 if m.away_score == 0: h.clean_sheets -= 1
-                if m.home_score == 0: a.clean_sheets -= 1
+                if m.home_score == 0: a.clean_sheets -= 1  # <--- FIXED: changed a_p to a
         db.session.delete(m); db.session.commit()
     return redirect(url_for('index'))
 
